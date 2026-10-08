@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+  .jobs { display: grid; gap: 8px; }
+  .job { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+  .job .title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status { font-size: 13px; font-weight: 600; }
+  .status.done { color: var(--ok); } .status.error { color: var(--err); } .status.active { color: var(--warn); }
+  .bar { grid-column: 1 / -1; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--accent); transition: width .4s; }
+  .err { grid-column: 1 / -1; font: 12px ui-monospace, monospace; color: var(--err); white-space: pre-wrap; max-height: 120px; overflow: auto; }
+  .lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .card { padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+  .results { display: grid; gap: 12px; margin-top: 14px; }
+  .result { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+  .result p { margin: 0; font-size: 14px; }
+  .result video { width: 100%; max-width: 640px; border-radius: 6px; background: #000; }
+</style>
+{% endblock %}
+{% block body %}
+<section class="panel">
+  <h2>Add instructional</h2>
+  <form id="add" class="row">
+    <input type="text" name="url" placeholder="Paste a YouTube or Bilibili link (video, playlist or multi-part upload)" required>
+    <button>Add</button>
+  </form>
+  <p id="addmsg" class="small muted"></p>
+</section>
+
+<section class="panel">
+  <h2>Ask the vault</h2>
+  <form id="search" class="row">
+    <input type="search" name="q" placeholder="e.g. how do I finish the kimura when they grab their belt?">
+    <button>Search</button>
+  </form>
+  <div id="results" class="results"></div>
+</section>
+
+<section class="panel">
+  <h2>Processing</h2>
+  <div id="jobs" class="jobs"><p class="muted small">Nothing queued yet.</p></div>
+</section>
+
+<section class="panel">
+  <h2>Library ({{ videos|length }})</h2>
+  {% if videos %}
+  <div class="lib">
+    {% for v in videos %}
+    <div class="card">
+      <a href="/watch/{{ v.id }}"><strong>{{ v.title }}</strong></a>
+      <div class="small muted">{{ v.instructor }} · {{ v.duration|ts }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="muted small">Add a link above to get started.</p>{% endif %}
+</section>
+
+<script>
+const STAGES = ["queued","downloading","transcribing","organizing","writing notes","indexing","done"];
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ts = s => { s = Math.floor(s); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = String(s%60).padStart(2,"0");
+                  return h ? `${h}:${String(m).padStart(2,"0")}:${x}` : `${m}:${x}`; };
+
+document.getElementById("add").onsubmit = async e => {
+  e.preventDefault();
+  const msg = document.getElementById("addmsg");
+  msg.textContent = "Reading link…";
+  const r = await fetch("/api/jobs", {method: "POST", headers: {"Content-Type": "application/json"},
+                                      body: JSON.stringify({url: e.target.url.value})});
+  const j = await r.json();
+  msg.textContent = r.ok ? `Queued ${j.queued.length} video(s).` : j.detail;
+  if (r.ok) e.target.reset();
+  loadJobs();
+};
+
+async function loadJobs() {
+  const jobs = await (await fetch("/api/jobs")).json();
+  if (!jobs.length) return;
+  document.getElementById("jobs").innerHTML = jobs.map(j => {
+    const i = STAGES.indexOf(j.status);
+    const cls = j.status === "done" ? "done" : j.status === "error" ? "error" : j.status === "queued" ? "" : "active";
+    const pct = j.status === "error" ? 100 : Math.max(0, i) / (STAGES.length - 1) * 100;
+    const link = j.video_id ? `<a href="/watch/${j.video_id}">${esc(j.title || j.url)}</a>` : esc(j.title || j.url);
+    return `<div class="job">
+      <div class="title">${link}</div>
+      <div class="status ${cls}">${esc(j.status)} ${j.status === "error" ? `<button class="ghost" onclick="retry(${j.id})">retry</button>` : ""}</div>
+      <div class="small muted" style="grid-column:1/-1">${esc(j.detail)}</div>
+      <div class="bar"><div style="width:${pct}%;${j.status==="error"?"background:var(--err)":""}"></div></div>
+      ${j.error ? `<div class="err">${esc(j.error)}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+async function retry(id) { await fetch(`/api/jobs/${id}/retry`, {method: "POST"}); loadJobs(); }
+loadJobs(); setInterval(loadJobs, 2500);
+
+document.getElementById("search").onsubmit = async e => {
+  e.preventDefault();
+  const box = document.getElementById("results");
+  box.innerHTML = '<p class="muted small">Searching…</p>';
+  const res = await (await fetch("/api/search?q=" + encodeURIComponent(e.target.q.value))).json();
+  if (!res.length) { box.innerHTML = '<p class="muted small">No matches.</p>'; return; }
+  box.innerHTML = res.map(r => {
+    const preview = r.kind === "technique" ? r.text.split("\n").slice(0, 3).join(" ") : r.text;
+    return `<div class="result">
+      <div><strong>${esc(r.technique || r.chapter || "Transcript")}</strong>
+        <span class="tag">${esc(r.kind)}</span> <span class="small muted">${esc(r.instructor)} — ${esc(r.video_title)} · ${ts(r.start)}–${ts(r.end)}</span></div>
+      <p>${esc(preview.slice(0, 400))}${preview.length > 400 ? "…" : ""}</p>
+      <video controls preload="metadata" src="/media/${r.video_id}.mp4#t=${Math.floor(r.start)},${Math.ceil(r.end)}"></video>
+      <div class="small"><a href="/watch/${r.video_id}?t=${Math.floor(r.start)}&end=${Math.ceil(r.end)}">Open in player</a>
+        · <a href="#" onclick="clip(event,'${r.video_id}',${r.start},${r.end})">Save clip</a></div>
+    </div>`;
+  }).join("");
+};
+async function clip(e, vid, s, en) {
+  e.preventDefault();
+  e.target.textContent = "Cutting…";
+  const r = await (await fetch("/api/clip", {method: "POST", headers: {"Content-Type": "application/json"},
+                                            body: JSON.stringify({video_id: vid, start: s, end: en})})).json();
+  e.target.outerHTML = `<a href="${r.url}" download>Download clip</a>`;
+}
+</script>
+{% endblock %}

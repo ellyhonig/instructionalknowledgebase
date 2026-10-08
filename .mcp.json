@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bjj-vault": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": ["run", "--project", "/Users/snapableapp/Documents/jewjitsuvault", "bjjvault-mcp"]
+    }
+  }
+}

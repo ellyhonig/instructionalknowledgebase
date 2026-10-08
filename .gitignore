@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+data/
+vault/.obsidian/workspace*.json
+.DS_Store
+
+# generated knowledge base content (notes + thumbnails) stays local
+vault/*
+!vault/.gitkeep

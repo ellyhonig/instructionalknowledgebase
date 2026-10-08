@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ org.title if org else meta.title }} · BJJ Vault{% endblock %}
+{% block head %}
+<style>
+  main { max-width: 1400px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+  video { width: 100%; border-radius: 10px; background: #000; display: block; }
+  .side { max-height: calc(100vh - 110px); overflow: auto; position: sticky; top: 76px; }
+  .ch { margin-bottom: 14px; }
+  .ch-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .tech { display: block; width: 100%; text-align: left; background: none; color: var(--text); font-weight: 400;
+          padding: 6px 8px; border-radius: 6px; font-size: 14px; }
+  .tech:hover, .tech.active { background: var(--accent-soft); }
+  .tech .t { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .detail h3 { margin: 16px 0 6px; font-size: 15px; }
+  .detail ul, .detail ol { margin: 0; padding-left: 20px; }
+  .banner { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .side { position: static; max-height: none; } }
+</style>
+{% endblock %}
+{% block body %}
+<div class="layout">
+  <div>
+    <video id="v" controls autoplay src="/media/{{ video_id }}.mp4"></video>
+    <div class="banner" id="banner"></div>
+    <div class="panel" style="margin-top:16px">
+      <h1 style="margin:0 0 4px;font-size:22px">{{ org.title if org else meta.title }}</h1>
+      <div class="muted small">{{ org.instructor if org else meta.uploader }} · {{ meta.duration|ts }}
+        {% if meta.url %} · <a href="{{ meta.url }}" target="_blank">original</a>{% endif %}</div>
+      {% if org %}<p>{{ org.summary }}</p>{% endif %}
+      <div id="detail" class="detail"></div>
+    </div>
+  </div>
+  {% if org %}
+  <aside class="panel side">
+    <h2>Chapters & techniques</h2>
+    {% for ch in org.chapters %}{% set ci = loop.index0 %}
+    <div class="ch">
+      <div class="ch-title">{{ ch.title }}</div>
+      {% for tq in ch.techniques %}
+      <button class="tech" data-c="{{ ci }}" data-i="{{ loop.index0 }}" data-s="{{ tq.start }}" data-e="{{ tq.end }}">
+        <span class="t">{{ tq.start|ts }}</span>{{ tq.name }}</button>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </aside>
+  {% endif %}
+</div>
+<script>
+const v = document.getElementById("v");
+const org = {{ org|tojson if org else "null" }};
+let stopAt = {{ end if end is not none else "null" }};
+const banner = document.getElementById("banner");
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ts = s => { s = Math.floor(s); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = String(s%60).padStart(2,"0");
+                  return h ? `${h}:${String(m).padStart(2,"0")}:${x}` : `${m}:${x}`; };
+
+function play(s, e) {
+  v.currentTime = s; stopAt = e; v.play();
+  banner.textContent = e ? `Playing ${ts(s)}–${ts(e)} · pauses at the end (press play to keep going)` : "";
+}
+v.addEventListener("loadedmetadata", () => play({{ t }}, stopAt), {once: true});
+v.addEventListener("timeupdate", () => {
+  if (stopAt && v.currentTime >= stopAt) { v.pause(); stopAt = null; banner.textContent = ""; }
+});
+
+const list = (title, items, ordered) => items && items.length
+  ? `<h3>${title}</h3><${ordered ? "ol" : "ul"}>${items.map(x => `<li>${esc(x)}</li>`).join("")}</${ordered ? "ol" : "ul"}>` : "";
+document.querySelectorAll(".tech").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tech").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  const t = org.chapters[b.dataset.c].techniques[b.dataset.i];
+  play(t.start, t.end);
+  document.getElementById("detail").innerHTML =
+    `<h2 style="margin-top:16px">${esc(t.name)} <span class="tag">${esc(t.position)}</span> <span class="tag">${esc(t.category)}</span></h2>
+     <p>${esc(t.summary)}</p>` + list("Steps", t.steps, true) + list("Key details", t.key_details) +
+    list("Common mistakes", t.common_mistakes) + list("Reactions & counters", t.opponent_reactions);
+});
+</script>
+{% endblock %}

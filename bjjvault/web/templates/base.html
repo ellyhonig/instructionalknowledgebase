@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}BJJ Vault{% endblock %}</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --panel: #ffffff; --text: #1d1c1a; --muted: #6b6862; --line: #e3e0da;
+    --accent: #2f5bd3; --accent-soft: #e8eefc; --ok: #2f8a4c; --err: #c23b2e; --warn: #b7791f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --panel: #1e1e1c; --text: #ecebe7; --muted: #9c998f; --line: #33322e;
+      --accent: #7c9cff; --accent-soft: #232b45; --ok: #5dbb7b; --err: #f07466; --warn: #e0a84a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 24px; border-bottom: 1px solid var(--line);
+           background: var(--panel); position: sticky; top: 0; z-index: 2; }
+  header .brand { font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 20px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+  input[type=text], input[type=search] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--text); font: inherit; }
+  button { padding: 10px 16px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; font: inherit;
+           font-weight: 600; cursor: pointer; white-space: nowrap; }
+  button.ghost { background: var(--accent-soft); color: var(--accent); padding: 4px 10px; font-size: 13px; }
+  .row { display: flex; gap: 10px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+  @media (max-width: 700px) { main { padding: 16px; } .row { flex-direction: column; } }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+<header><a class="brand" href="/">🥋 BJJ Vault</a></header>
+<main>{% block body %}{% endblock %}</main>
+</body>
+</html>

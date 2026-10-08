@@ -1,0 +1,24 @@
+[project]
+name = "bjjvault"
+version = "0.1.0"
+description = "Collect BJJ instructionals, transcribe them, organize into an Obsidian vault, and search them semantically with clips."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "yt-dlp>=2025.1.1",
+    "mlx-whisper>=0.4.2",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+    "pydantic>=2.8",
+    "fastembed>=0.4",
+    "numpy>=1.26",
+    "mcp>=2.0",
+]
+
+[project.scripts]
+bjjvault = "bjjvault.cli:main"
+bjjvault-mcp = "bjjvault.mcp_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
