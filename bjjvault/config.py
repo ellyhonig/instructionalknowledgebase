@@ -1,11 +1,13 @@
 """Paths, ports and model settings. Override any of these with env vars."""
 
 import glob
+import json
 import os
 import platform
 import shutil
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = Path(os.environ.get("BJJVAULT_ROOT", Path(__file__).resolve().parent.parent))
 DATA = ROOT / "data"
@@ -28,7 +30,23 @@ DB_PATH = DATA / "vault.db"
 HOST = os.environ.get("BJJVAULT_HOST", "127.0.0.1")
 PORT = int(os.environ.get("BJJVAULT_PORT", "8765"))
 BASE_URL = f"http://localhost:{PORT}"
+MOBILE_URL_FILE = DATA / "mobile-url.json"
+MOBILE_PORT = int(os.environ.get("BJJVAULT_MOBILE_PORT", "8767"))
 LINK_TTL = int(os.environ.get("BJJVAULT_LINK_TTL", "3600"))
+
+
+def playback_base_url() -> str:
+    """Read the current HTTPS tunnel address on every call, including from existing MCP sessions."""
+    url = os.environ.get("BJJVAULT_PUBLIC_URL")
+    if not url:
+        try:
+            url = json.loads(MOBILE_URL_FILE.read_text(encoding="utf-8"))["url"]
+        except (OSError, ValueError, KeyError):
+            return BASE_URL
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
+        raise ValueError("Mobile playback URL must be an HTTPS origin without credentials, path, or query")
+    return url.rstrip("/")
 
 USE_MLX = sys.platform == "darwin" and platform.machine() == "arm64"
 WHISPER_MODEL = os.environ.get("BJJVAULT_WHISPER", "mlx-community/whisper-large-v3-turbo" if USE_MLX else "small.en")

@@ -14,7 +14,7 @@ class StreamingTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=config.TMP)
         root = Path(self.temp.name)
         self.paths = patch.multiple(config, VIDEOS=root/'videos', META=root/'meta',
-                                   DB_PATH=root/'test.db', CLIPS=root/'clips')
+                                   DB_PATH=root/'test.db', CLIPS=root/'clips', MOBILE_URL_FILE=root/'mobile-url.json')
         self.paths.start()
         config.ensure_dirs()
         (config.VIDEOS/'demo.mp4').write_bytes(b'0123456789abcdef')

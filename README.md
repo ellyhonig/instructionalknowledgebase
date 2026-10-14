@@ -50,9 +50,40 @@ The player pauses at the selected end. Playback uses HTTP byte ranges on the sou
 so a new clip file is unnecessary. Links last one hour by default, survive server restarts
 until expiry, and allow ranges up to five minutes. Expired links return HTTP 410; request a new one.
 
-Links work on this PC with the web server running. The default server binds to loopback;
-they are not public internet links or cross-device links. Token expiry applies to new player
+By default, links work on this PC with the web server running. Enable the mobile tunnel below
+for phone-accessible HTTPS links. Token expiry applies to new player
 and media requests; it cannot retract media a browser has already buffered.
+
+## Phone access through mobile Codex
+
+On your phone, choose your connected Windows PC in Codex/Remote and use a PC-connected chat.
+Ask: **Use bjj-vault to find the body-lock passing explanation and give me a phone-playable clip link.**
+The MCP server is registered globally on the PC, so a chat can use it without opening the repository
+folder on the phone. The repo and media stay on X: (clonkker). To show the repo as a saved project,
+use Add/Open project in the desktop app and select `X:\instructionalknowledgebase`; then select
+that saved project on mobile. Other registered projects on X: demonstrate that secondary drives work.
+
+```powershell
+cd X:\instructionalknowledgebase
+.\Start-Mobile.ps1
+```
+
+This downloads a checksum-verified portable Cloudflare Tunnel binary into `.tools/`, starts a
+clip-only loopback gateway on port 8767, and creates a temporary HTTPS address. No Cloudflare account,
+API key, phone VPN app, or router port forwarding is needed. Access is granted by the long random
+token in each clip link: anyone holding the complete URL can view it until expiry. The tunnel exposes
+only token-checked clip/player routes and a generic readiness page, with no search, library listings,
+ingestion API, ordinary video mounts, or API documentation. Playback streams through Cloudflare
+from this PC. Request a clip through MCP to receive its phone-accessible `play_url`.
+
+The address changes when the tunnel restarts. New links automatically use the current address,
+including from MCP sessions that have loaded this version. Request a new link after a tunnel restart.
+Cloudflare Quick Tunnels are temporary and have no uptime guarantee; use a named tunnel or private
+network for a permanent hostname. See https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/.
+
+`Start-Vault.ps1` also starts mobile access after it has been enabled. `Stop-Vault.ps1` stops both
+servers; starting again restores both. `Stop-Mobile.ps1` stops and disables mobile access while
+leaving ingestion running. Logs and runtime addresses/PIDs stay under ignored `data/` on X:.
 
 Open `vault/` in Obsidian and start at `Home.md`. Persistent note timestamp links use the
 ordinary local player and require the server to be running.

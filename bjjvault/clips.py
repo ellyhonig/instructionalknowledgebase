@@ -32,11 +32,13 @@ def create_link(video_id: str, start: float, end: float, ttl: int | None = None)
         con.execute("DELETE FROM stream_links WHERE expires <= ?", (time.time(),))
         con.execute("INSERT INTO stream_links VALUES (?,?,?,?,?)", (token, video_id, start, end, expires))
     con.close()
-    return {"play_url": f"{config.BASE_URL}/clip/{token}",
+    playback_url = config.playback_base_url()
+    return {"play_url": f"{playback_url}/clip/{token}",
             "start": start, "end": end,
             "expires_at": datetime.fromtimestamp(expires, timezone.utc).isoformat(),
             "in_context_url": f"{config.BASE_URL}/watch/{video_id}?t={start}&end={end}",
-            "note": "Streams from this PC while BJJ Vault is running. Link expires; no clip file is created."}
+            "phone_accessible": playback_url != config.BASE_URL,
+            "note": "Streams from this PC while BJJ Vault and mobile access are running. Anyone with the full link can play it until expiry. The in-context URL is local to the PC."}
 
 
 def resolve_link(token: str) -> dict | None:

@@ -3,7 +3,7 @@
 {% block body %}
 <section class="panel">
   <h1>Instructional clip · {{ link.start|ts }}–{{ link.end|ts }}</h1>
-  <video id="clip" controls autoplay preload="metadata" style="width:100%;background:#000"
+  <video id="clip" controls autoplay playsinline preload="metadata" style="width:100%;background:#000"
          src="/stream/{{ token }}#t={{ link.start }},{{ link.end }}"></video>
   <p>This temporary link streams from your PC. <button id="replay">Replay clip</button></p>
 </section>

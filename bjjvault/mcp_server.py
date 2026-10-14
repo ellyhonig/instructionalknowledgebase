@@ -37,9 +37,10 @@ def get_transcript(video_id: str, start: float, end: float) -> str:
 
 @mcp.tool()
 def make_clip(video_id: str, start: float, end: float) -> str:
-    """Return an expiring localhost streaming link for a downloaded instructional range in seconds.
+    """Return an expiring streaming link for a downloaded instructional range in seconds.
     No clip file is created or attached. Keep ranges tight (usually 15–120s, maximum 300s).
-    The web app must be running on this PC; links expire after one hour by default."""
+    With mobile access enabled, play_url is an HTTPS link reachable on phones.
+    Keep the PC online; links expire after one hour by default. in_context_url is PC-local."""
     return json.dumps(clips.create_link(video_id, start, end))
 
 

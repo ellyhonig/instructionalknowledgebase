@@ -1,16 +1,18 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from .. import clips, config, db, download, index, organize, pipeline
 from ..util import fmt_ts, source_url
+from .playback import router as playback_router
 
 config.ensure_dirs()
 app = FastAPI(title="BJJ Vault")
+app.include_router(playback_router)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.filters["ts"] = fmt_ts
 app.mount("/media", StaticFiles(directory=config.VIDEOS), name="media")
@@ -80,30 +82,6 @@ def clip(req: ClipReq):
     except (ValueError, FileNotFoundError) as exc:
         raise HTTPException(400, str(exc))
     return {"url": result["play_url"], **result}
-
-
-def _link(token: str):
-    link = clips.resolve_link(token)
-    if not link:
-        raise HTTPException(410, "This clip link has expired or does not exist. Request a new link.")
-    if not download.video_path(link["video_id"]).is_file():
-        raise HTTPException(404, "Video no longer available")
-    return link
-
-
-@app.get("/clip/{token}", response_class=HTMLResponse)
-def stream_player(request: Request, token: str):
-    link = _link(token)
-    return templates.TemplateResponse(request, "clip.html", {"link": link, "token": token},
-        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
-
-
-@app.api_route("/stream/{token}", methods=["GET", "HEAD"])
-def stream_media(token: str):
-    link = _link(token)
-    # Starlette FileResponse supports HTTP byte ranges so browsers can seek without downloading the full file.
-    return FileResponse(download.video_path(link["video_id"]), media_type="video/mp4",
-                        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
 
 @app.get("/watch/{video_id}", response_class=HTMLResponse)
