@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Instructional clip · BJJ Vault{% endblock %}
+{% block body %}
+<section class="panel">
+  <h1>Instructional clip · {{ link.start|ts }}–{{ link.end|ts }}</h1>
+  <video id="clip" controls autoplay preload="metadata" style="width:100%;background:#000"
+         src="/stream/{{ token }}#t={{ link.start }},{{ link.end }}"></video>
+  <p>This temporary link streams from your PC. <button id="replay">Replay clip</button></p>
+</section>
+<script>
+const v = document.getElementById('clip');
+const start = {{ link.start|tojson }}, end = {{ link.end|tojson }};
+v.addEventListener('loadedmetadata', () => { v.currentTime = start; });
+v.addEventListener('play', () => { if(v.currentTime < start || v.currentTime >= end) v.currentTime = start; });
+v.addEventListener('seeking', () => { if(v.currentTime < start) v.currentTime = start; if(v.currentTime > end) v.currentTime = end; });
+v.addEventListener('timeupdate', () => { if(v.currentTime >= end) v.pause(); });
+document.getElementById('replay').onclick = () => { v.currentTime = start; v.play(); };
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -54,7 +54,7 @@ def add_job(req: AddReq):
 @app.get("/api/jobs")
 def jobs():
     con = db.connect()
-    rows = [dict(r) for r in con.execute("SELECT * FROM jobs ORDER BY id DESC LIMIT 50")]
+    rows = [dict(r) for r in con.execute("SELECT * FROM jobs ORDER BY id DESC LIMIT 500")]
     con.close()
     return rows
 
@@ -75,8 +75,35 @@ def search(q: str, limit: int = 10):
 
 @app.post("/api/clip")
 def clip(req: ClipReq):
-    path = clips.make_clip(req.video_id, req.start, req.end)
-    return {"url": f"/clips/{path.name}", "file": str(path)}
+    try:
+        result = clips.create_link(req.video_id, req.start, req.end)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(400, str(exc))
+    return {"url": result["play_url"], **result}
+
+
+def _link(token: str):
+    link = clips.resolve_link(token)
+    if not link:
+        raise HTTPException(410, "This clip link has expired or does not exist. Request a new link.")
+    if not download.video_path(link["video_id"]).is_file():
+        raise HTTPException(404, "Video no longer available")
+    return link
+
+
+@app.get("/clip/{token}", response_class=HTMLResponse)
+def stream_player(request: Request, token: str):
+    link = _link(token)
+    return templates.TemplateResponse(request, "clip.html", {"link": link, "token": token},
+        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+
+
+@app.api_route("/stream/{token}", methods=["GET", "HEAD"])
+def stream_media(token: str):
+    link = _link(token)
+    # Starlette FileResponse supports HTTP byte ranges so browsers can seek without downloading the full file.
+    return FileResponse(download.video_path(link["video_id"]), media_type="video/mp4",
+                        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
 
 @app.get("/watch/{video_id}", response_class=HTMLResponse)

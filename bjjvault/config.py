@@ -2,12 +2,21 @@
 
 import glob
 import os
+import platform
 import shutil
+import sys
 from pathlib import Path
 
 ROOT = Path(os.environ.get("BJJVAULT_ROOT", Path(__file__).resolve().parent.parent))
 DATA = ROOT / "data"
 VAULT = ROOT / "vault"
+CACHE = DATA / "cache"
+TMP = DATA / "tmp"
+TMP.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("HF_HOME", str(CACHE / "huggingface"))
+os.environ.setdefault("FASTEMBED_CACHE_PATH", str(CACHE / "fastembed"))
+os.environ.setdefault("TEMP", str(TMP))
+os.environ.setdefault("TMP", str(TMP))
 
 VIDEOS = DATA / "videos"
 META = DATA / "meta"
@@ -19,8 +28,13 @@ DB_PATH = DATA / "vault.db"
 HOST = os.environ.get("BJJVAULT_HOST", "127.0.0.1")
 PORT = int(os.environ.get("BJJVAULT_PORT", "8765"))
 BASE_URL = f"http://localhost:{PORT}"
+LINK_TTL = int(os.environ.get("BJJVAULT_LINK_TTL", "3600"))
 
-WHISPER_MODEL = os.environ.get("BJJVAULT_WHISPER", "mlx-community/whisper-large-v3-turbo")
+USE_MLX = sys.platform == "darwin" and platform.machine() == "arm64"
+WHISPER_MODEL = os.environ.get("BJJVAULT_WHISPER", "mlx-community/whisper-large-v3-turbo" if USE_MLX else "small.en")
+WHISPER_DEVICE = os.environ.get("BJJVAULT_WHISPER_DEVICE", "cpu")
+AI_PROVIDER = os.environ.get("BJJVAULT_AI_PROVIDER", "codex")
+CODEX_MODEL = os.environ.get("BJJVAULT_CODEX_MODEL")
 EMBED_MODEL = os.environ.get("BJJVAULT_EMBED", "BAAI/bge-small-en-v1.5")
 CLAUDE_MODEL = os.environ.get("BJJVAULT_CLAUDE_MODEL", "opus")
 # e.g. "chrome" or "safari" -- lets yt-dlp use your browser login (higher Bilibili quality)
@@ -29,7 +43,7 @@ MAX_HEIGHT = int(os.environ.get("BJJVAULT_MAX_HEIGHT", "1080"))
 
 
 def ensure_dirs() -> None:
-    for d in (VIDEOS, META, TRANSCRIPTS, ORGANIZED, CLIPS, VAULT):
+    for d in (VIDEOS, META, TRANSCRIPTS, ORGANIZED, CLIPS, VAULT, CACHE, TMP):
         d.mkdir(parents=True, exist_ok=True)
 
 

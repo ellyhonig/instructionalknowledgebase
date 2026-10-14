@@ -40,8 +40,10 @@ def process(video_url: str, playlist: str | None = None, on_status=lambda status
     tr = transcribe.transcribe(vid, download.video_path(vid))
     if redo_notes:
         (config.ORGANIZED / f"{vid}.json").unlink(missing_ok=True)
+        for part in (config.ORGANIZED / "parts").glob(f"{vid}.part-*.json"):
+            part.unlink()
         notes.remove_stale(vid)
-    on_status("organizing", "Claude is writing structured notes")
+    on_status("organizing", f"{config.AI_PROVIDER} is writing structured notes")
     org = organize.organize(vid, meta, tr)
     on_status("writing notes")
     notes.write_instructional(vid, meta, org)

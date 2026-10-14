@@ -17,7 +17,7 @@ def _embedder():
     with _lock:
         if _model is None:
             from fastembed import TextEmbedding
-            _model = TextEmbedding(config.EMBED_MODEL)
+            _model = TextEmbedding(config.EMBED_MODEL, cache_dir=str(config.CACHE / "fastembed"))
     return _model
 
 
@@ -111,6 +111,7 @@ def search(query: str, limit: int = 8, kind: str | None = None, video_id: str | 
         f"JOIN videos v ON v.id=c.video_id {clause}", args
     ).fetchall()
     if not rows:
+        con.close()
         return []
     by_id = {r["id"]: r for r in rows}
 

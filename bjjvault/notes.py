@@ -24,11 +24,11 @@ def _write_managed(path: Path, frontmatter: dict, body: str) -> None:
     """Regenerate our section but keep anything the user wrote below the end marker."""
     user = "\n\n## My notes\n\n"
     if path.exists():
-        old = path.read_text()
+        old = path.read_text(encoding="utf-8")
         if END in old:
             user = old.split(END, 1)[1]
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"{_fm(frontmatter)}\n{START}\n{body.rstrip()}\n{END}{user}")
+    path.write_text(f"{_fm(frontmatter)}\n{START}\n{body.rstrip()}\n{END}{user}", encoding="utf-8")
 
 
 def folder_name(org: dict) -> str:
@@ -172,8 +172,8 @@ def _all_organized() -> list[tuple[str, dict, dict]]:
     for f in sorted(config.ORGANIZED.glob("*.json")):
         vid = f.stem
         meta_f = config.META / f"{vid}.json"
-        meta = json.loads(meta_f.read_text()) if meta_f.exists() else {}
-        out.append((vid, meta, json.loads(f.read_text())))
+        meta = json.loads(meta_f.read_text(encoding="utf-8")) if meta_f.exists() else {}
+        out.append((vid, meta, json.loads(f.read_text(encoding="utf-8"))))
     return out
 
 
@@ -251,5 +251,5 @@ def rebuild_hubs() -> None:
 def remove_stale(video_id: str) -> None:
     """Delete generated note files for a video (used before re-organizing)."""
     for f in (config.VAULT / "Instructionals").rglob("*.md") if (config.VAULT / "Instructionals").exists() else []:
-        if re.search(rf'^video_id: "{re.escape(video_id)}"$', f.read_text(), re.M):
+        if re.search(rf'^video_id: "{re.escape(video_id)}"$', f.read_text(encoding="utf-8"), re.M):
             f.unlink()

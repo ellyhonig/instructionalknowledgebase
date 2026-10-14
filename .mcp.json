@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "bjj-vault": {
-      "command": "/opt/homebrew/bin/uv",
-      "args": ["run", "--project", "/Users/snapableapp/Documents/jewjitsuvault", "bjjvault-mcp"]
+      "command": "X:/instructionalknowledgebase/.venv/Scripts/python.exe",
+      "args": ["-X", "utf8", "-m", "bjjvault.mcp_server"],
+      "env": {"BJJVAULT_ROOT": "X:/instructionalknowledgebase", "PYTHONUTF8": "1"}
     }
   }
 }

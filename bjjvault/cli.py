@@ -49,7 +49,7 @@ def main():
                   f" ({r['kind']}: {r['technique'] or r['chapter']})  {r['video_id']}")
     elif args.cmd == "clip":
         from . import clips
-        print(clips.make_clip(args.video_id, args.start, args.end))
+        print(json.dumps(clips.create_link(args.video_id, args.start, args.end), indent=2))
 
 
 if __name__ == "__main__":

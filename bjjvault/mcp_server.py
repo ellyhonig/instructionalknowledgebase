@@ -2,12 +2,12 @@
 
 import json
 
-from mcp.server.mcpserver import MCPServer
+from mcp.server.fastmcp import FastMCP
 
 from . import clips, config, db, index, pipeline, transcribe
 from .util import fmt_ts, player_url, source_url
 
-mcp = MCPServer("bjj-vault")
+mcp = FastMCP("bjj-vault")
 
 
 @mcp.tool()
@@ -37,15 +37,10 @@ def get_transcript(video_id: str, start: float, end: float) -> str:
 
 @mcp.tool()
 def make_clip(video_id: str, start: float, end: float) -> str:
-    """Cut a clip (seconds) from a downloaded instructional. Returns the mp4 path and a browser URL to play it.
-    Keep clips tight (usually 15–120s) around exactly what was asked."""
-    path = clips.make_clip(video_id, start, end)
-    return json.dumps({
-        "file": str(path),
-        "play_url": f"{config.BASE_URL}/clips/{path.name}",
-        "in_context_url": player_url(video_id, start, end),
-        "note": f"URLs need the web app running (`uv run bjjvault serve`).",
-    })
+    """Return an expiring localhost streaming link for a downloaded instructional range in seconds.
+    No clip file is created or attached. Keep ranges tight (usually 15–120s, maximum 300s).
+    The web app must be running on this PC; links expire after one hour by default."""
+    return json.dumps(clips.create_link(video_id, start, end))
 
 
 @mcp.tool()

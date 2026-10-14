@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS jobs (
     status TEXT DEFAULT 'queued', detail TEXT DEFAULT '', error TEXT,
     created TEXT DEFAULT CURRENT_TIMESTAMP, updated TEXT DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS stream_links (
+    token TEXT PRIMARY KEY, video_id TEXT NOT NULL, start REAL NOT NULL,
+    end REAL NOT NULL, expires REAL NOT NULL
+);
 """
 
 

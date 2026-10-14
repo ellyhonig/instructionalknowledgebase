@@ -107,16 +107,18 @@ document.getElementById("search").onsubmit = async e => {
       <p>${esc(preview.slice(0, 400))}${preview.length > 400 ? "…" : ""}</p>
       <video controls preload="metadata" src="/media/${r.video_id}.mp4#t=${Math.floor(r.start)},${Math.ceil(r.end)}"></video>
       <div class="small"><a href="/watch/${r.video_id}?t=${Math.floor(r.start)}&end=${Math.ceil(r.end)}">Open in player</a>
-        · <a href="#" onclick="clip(event,'${r.video_id}',${r.start},${r.end})">Save clip</a></div>
+        · <a href="#" onclick="clip(event,'${r.video_id}',${r.start},${r.end})">Temporary clip link</a></div>
     </div>`;
   }).join("");
 };
 async function clip(e, vid, s, en) {
   e.preventDefault();
-  e.target.textContent = "Cutting…";
-  const r = await (await fetch("/api/clip", {method: "POST", headers: {"Content-Type": "application/json"},
-                                            body: JSON.stringify({video_id: vid, start: s, end: en})})).json();
-  e.target.outerHTML = `<a href="${r.url}" download>Download clip</a>`;
+  e.target.textContent = "Creating link…";
+  const response = await fetch("/api/clip", {method: "POST", headers: {"Content-Type": "application/json"},
+                                            body: JSON.stringify({video_id: vid, start: s, end: Math.min(en, s+300)})});
+  const r = await response.json();
+  if (!response.ok) { e.target.textContent = r.detail || 'Could not create link'; return; }
+  e.target.outerHTML = `<a href="${r.url}" target="_blank" rel="noreferrer">Play temporary clip</a>`;
 }
 </script>
 {% endblock %}
