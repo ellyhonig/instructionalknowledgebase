@@ -68,13 +68,28 @@ cd X:\instructionalknowledgebase
 .\Start-Mobile.ps1
 ```
 
-This downloads a checksum-verified portable Cloudflare Tunnel binary into `.tools/`, starts a
-clip-only loopback gateway on port 8767, and creates a temporary HTTPS address. No Cloudflare account,
-API key, phone VPN app, or router port forwarding is needed. Access is granted by the long random
-token in each clip link: anyone holding the complete URL can view it until expiry. The tunnel exposes
-only token-checked clip/player routes and a generic readiness page, with no search, library listings,
-ingestion API, ordinary video mounts, or API documentation. Playback streams through Cloudflare
-from this PC. Request a clip through MCP to receive its phone-accessible `play_url`.
+This downloads a checksum-verified portable Cloudflare Tunnel binary into `.tools/`, starts an
+authenticated loopback gateway on port 8767, and forwards it to a temporary HTTPS address.
+No Cloudflare account, OpenAI API key, phone VPN app, or router port-forwarding rule is needed.
+The full library, search, video player, and ingestion controls require your private vault access token.
+
+Run `.\Get-MobileAccess.ps1` to print a private one-click sign-in link for your phone. The token is
+kept in ignored `data/mobile-access-token.txt` on X:. Its URL fragment is consumed by the sign-in
+page and removed from browser history before the token is submitted. The browser receives a
+Secure, HttpOnly, SameSite=Strict session cookie valid for seven days. Unauthenticated API calls
+are rejected and unauthenticated page visits open sign-in. Visit `/login` to sign out of a browser.
+API clients can instead send `Authorization: Bearer <vault-access-token>`.
+
+To replace the token and invalidate existing browser sessions, run:
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m bjjvault.mobile_auth --rotate
+.\Get-MobileAccess.ps1
+```
+
+Temporary MCP clip links retain their own scoped, expiring tokens: anyone holding a complete
+clip URL can view that source until expiry, without unlocking the rest of the library. Playback
+streams through Cloudflare from this PC. New phone requests must keep the PC and services online.
 
 The address changes when the tunnel restarts. New links automatically use the current address,
 including from MCP sessions that have loaded this version. Request a new link after a tunnel restart.

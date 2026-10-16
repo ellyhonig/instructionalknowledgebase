@@ -1,4 +1,4 @@
-"""Supervise a clip-only loopback server and a temporary Cloudflare HTTPS tunnel."""
+"""Supervise an authenticated mobile gateway and a temporary Cloudflare HTTPS tunnel."""
 import json
 import os
 import re
@@ -36,7 +36,7 @@ def main():
                 if gateway.poll() is not None:
                     raise RuntimeError('Mobile gateway stopped; check data/logs/mobile-gateway.log.')
                 try:
-                    if requests.get(f'http://127.0.0.1:{config.MOBILE_PORT}/', timeout=1).status_code == 200:
+                    if requests.get(f'http://127.0.0.1:{config.MOBILE_PORT}/healthz', timeout=1).status_code == 200:
                         break
                 except requests.RequestException:
                     pass

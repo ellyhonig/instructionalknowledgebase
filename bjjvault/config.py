@@ -31,6 +31,7 @@ HOST = os.environ.get("BJJVAULT_HOST", "127.0.0.1")
 PORT = int(os.environ.get("BJJVAULT_PORT", "8765"))
 BASE_URL = f"http://localhost:{PORT}"
 MOBILE_URL_FILE = DATA / "mobile-url.json"
+MOBILE_ACCESS_TOKEN_FILE = DATA / "mobile-access-token.txt"
 MOBILE_PORT = int(os.environ.get("BJJVAULT_MOBILE_PORT", "8767"))
 LINK_TTL = int(os.environ.get("BJJVAULT_LINK_TTL", "3600"))
 

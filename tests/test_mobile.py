@@ -15,7 +15,8 @@ class MobileTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=config.TMP)
         self.root = Path(self.temp.name)
         self.paths = patch.multiple(config, VIDEOS=self.root/'videos', META=self.root/'meta',
-            CLIPS=self.root/'clips', DB_PATH=self.root/'test.db', MOBILE_URL_FILE=self.root/'mobile-url.json')
+            CLIPS=self.root/'clips', DB_PATH=self.root/'test.db', MOBILE_URL_FILE=self.root/'mobile-url.json',
+            MOBILE_ACCESS_TOKEN_FILE=self.root/'token.txt')
         self.paths.start()
         self.env = patch.dict(os.environ)
         self.env.start()
@@ -46,11 +47,13 @@ class MobileTests(unittest.TestCase):
             with self.subTest(url=url), patch.dict(os.environ,{'BJJVAULT_PUBLIC_URL':url}), self.assertRaises(ValueError):
                 config.playback_base_url()
 
-    def test_gateway_has_no_library_or_control_endpoints(self):
-        for path in ('/api/jobs','/api/search','/media/demo.mp4','/watch/demo','/assets/test.jpg','/docs','/openapi.json'):
+    def test_gateway_requires_authentication_for_library_and_controls(self):
+        for path in ('/media/demo.mp4','/watch/demo','/assets/test.jpg','/docs','/openapi.json'):
             with self.subTest(path=path):
-                self.assertEqual(self.client.get(path).status_code,404)
-        self.assertEqual(self.client.post('/api/jobs',json={'url':'example'}).status_code,404)
+                self.assertEqual(self.client.get(path,follow_redirects=False).status_code,303)
+        self.assertEqual(self.client.get('/api/search').status_code,401)
+        self.assertEqual(self.client.get('/api/jobs').status_code,401)
+        self.assertEqual(self.client.post('/api/jobs',json={'url':'example'}).status_code,401)
 
     def test_token_required_and_expired_access_denied(self):
         self.assertEqual(self.client.get('/clip/bogus').status_code,410)
