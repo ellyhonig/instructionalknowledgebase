@@ -25,9 +25,10 @@ keeps running after the shell closes; it does not automatically launch after a W
 Run `.\Stop-Vault.ps1` to stop it. Starting again resumes cached stages and partial downloads.
 Logs are in `data/logs/`.
 
-The home page shows saved thumbnail covers. Select a cover to highlight it and restrict questions
-to that instructional, including all indexed parts of the same Bilibili upload. The selected title
-appears above the question box and is remembered in that browser. Choose **Search all** to search
+The home page shows saved thumbnail covers. Select a cover to highlight it and reveal the question
+box directly underneath it. Questions are restricted to that instructional, including all indexed
+parts of the same Bilibili upload. The selected title appears above the question box and is
+remembered in that browser. Choose **Search all** to search
 the whole library. Only successfully indexed parts appear in the library; check **Processing** for
 pending or failed parts. Search returns matching notes and timestamped video passages.
 

@@ -9,9 +9,14 @@
   .bar { grid-column: 1 / -1; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
   .bar > div { height: 100%; background: var(--accent); transition: width .4s; }
   .err { grid-column: 1 / -1; font: 12px ui-monospace, monospace; color: var(--err); white-space: pre-wrap; max-height: 120px; overflow: auto; }
-  .lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; max-height: 480px; overflow-y: auto; padding: 4px; }
+  .lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; padding: 4px; align-items: start; }
+  .instructional-item { min-width: 0; }
+  .instructional-item.selected { grid-column: 1 / -1; }
+  .instructional-item.selected .card { max-width: 320px; }
+  .question-panel { margin-top: 16px; padding: 16px; border: 1px solid var(--accent); border-radius: 10px; background: var(--accent-soft); scroll-margin-top: 80px; }
+  .question-panel[hidden] { display: none; }
   .card { position: relative; display: flex; flex-direction: column; padding: 0; border: 2px solid var(--line); border-radius: 10px;
-          background: var(--panel); color: var(--text); text-align: left; white-space: normal; overflow: hidden; }
+          width: 100%; background: var(--panel); color: var(--text); text-align: left; white-space: normal; overflow: hidden; }
   .card:hover { border-color: var(--accent); }
   .card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft); }
@@ -25,7 +30,7 @@
   #scope { margin: 0 0 12px; }
   summary { cursor: pointer; font-weight: 600; color: var(--muted); }
   details[open] summary { margin-bottom: 14px; }
-  @media (max-width: 500px) { .lib { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 420px; gap: 10px; } .card-info { padding: 8px; font-size: 13px; } }
+  @media (max-width: 500px) { .lib { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .card-info { padding: 8px; font-size: 13px; } }
   .results { display: grid; gap: 12px; margin-top: 14px; }
   .result { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
   .result p { margin: 0; font-size: 14px; }
@@ -42,6 +47,7 @@
   {% if instructionals %}
   <div class="lib">
     {% for i in instructionals %}
+    <article class="instructional-item">
     <button type="button" class="card" data-instructional="{{ i.id }}" data-title="{{ i.title }}" aria-pressed="false" aria-label="Select {{ i.title }} by {{ i.instructor }}">
       {% if i.thumbnail %}<img class="cover" src="{{ i.thumbnail }}" alt="{{ i.title }}" loading="lazy" width="640" height="360">
       {% else %}<span class="cover placeholder" aria-hidden="true">🥋</span>{% endif %}
@@ -51,12 +57,12 @@
         <span class="small muted">{{ i.video_ids|length }} indexed part{{ 's' if i.video_ids|length != 1 else '' }} · {{ i.duration|ts }}</span>
       </span>
     </button>
+    </article>
     {% endfor %}
   </div>
   {% else %}<p class="muted small">Add a link below to get started.</p>{% endif %}
-</section>
-
-<section class="panel">
+<div id="question-home">
+<section id="question-panel" class="question-panel" hidden aria-label="Ask about your selection">
   <h2>Ask the vault</h2>
   <p id="scope" class="small" role="status">Searching all instructionals</p>
   <form id="search" class="row">
@@ -64,6 +70,8 @@
     <button>Search</button>
   </form>
   <div id="results" class="results" aria-live="polite"></div>
+</section>
+</div>
 </section>
 
 <section class="panel">
@@ -87,17 +95,27 @@ const ts = s => { s = Math.floor(s); const h = Math.floor(s/3600), m = Math.floo
                   return h ? `${h}:${String(m).padStart(2,"0")}:${x}` : `${m}:${x}`; };
 let selected = null, searchVersion = 0;
 const cards = [...document.querySelectorAll('[data-instructional]')];
-function selectInstructional(id) {
+function selectInstructional(id, reveal = false) {
   selected = cards.find(card => card.dataset.instructional === id) || null;
-  cards.forEach(card => card.setAttribute('aria-pressed', String(card === selected)));
+  cards.forEach(card => {
+    card.setAttribute('aria-pressed', String(card === selected));
+    card.parentElement.classList.toggle('selected', card === selected);
+  });
+  const panel = document.getElementById('question-panel');
+  (selected ? selected.parentElement : document.getElementById('question-home')).append(panel);
+  panel.hidden = !selected && !reveal;
   document.getElementById('all-vault').setAttribute('aria-pressed', String(!selected));
   document.getElementById('scope').textContent = selected ? `Searching: ${selected.dataset.title}` : 'Searching all instructionals';
   document.getElementById('results').replaceChildren();
   searchVersion++; // Ignore a response from an earlier selection or question.
   try { localStorage.setItem('bjj-vault-instructional', selected?.dataset.instructional || ''); } catch {}
+  if (reveal) {
+    document.querySelector('#search input').focus({preventScroll: true});
+    panel.scrollIntoView({block: 'nearest'});
+  }
 }
-cards.forEach(card => card.onclick = () => selectInstructional(card.dataset.instructional));
-document.getElementById('all-vault').onclick = () => selectInstructional(null);
+cards.forEach(card => card.onclick = () => selectInstructional(card.dataset.instructional, true));
+document.getElementById('all-vault').onclick = () => selectInstructional(null, true);
 try { selectInstructional(localStorage.getItem('bjj-vault-instructional')); } catch {}
 
 document.getElementById("add").onsubmit = async e => {
