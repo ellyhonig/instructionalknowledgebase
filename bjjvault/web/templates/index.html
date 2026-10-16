@@ -43,12 +43,12 @@
     <h2>Your instructionals ({{ instructionals|length }})</h2>
     <button type="button" class="ghost" id="all-vault" aria-pressed="true">Search all</button>
   </div>
-  <p class="small muted">Select a thumbnail to ask questions about that instructional. All indexed parts are included.</p>
+  <p class="small muted">Select a thumbnail to ask questions about that instructional. Numbered parts from the same instructor are grouped together.</p>
   {% if instructionals %}
   <div class="lib">
     {% for i in instructionals %}
     <article class="instructional-item">
-    <button type="button" class="card" data-instructional="{{ i.id }}" data-title="{{ i.title }}" aria-pressed="false" aria-label="Select {{ i.title }} by {{ i.instructor }}">
+    <button type="button" class="card" data-instructional="{{ i.id }}" data-aliases="{{ i.aliases|join(' ') }}" data-title="{{ i.title }}" aria-pressed="false" aria-label="Select {{ i.title }} by {{ i.instructor }}">
       {% if i.thumbnail %}<img class="cover" src="{{ i.thumbnail }}" alt="{{ i.title }}" loading="lazy" width="640" height="360">
       {% else %}<span class="cover placeholder" aria-hidden="true">🥋</span>{% endif %}
       <span class="selected-marker">✓ Selected</span>
@@ -96,7 +96,7 @@ const ts = s => { s = Math.floor(s); const h = Math.floor(s/3600), m = Math.floo
 let selected = null, searchVersion = 0;
 const cards = [...document.querySelectorAll('[data-instructional]')];
 function selectInstructional(id, reveal = false) {
-  selected = cards.find(card => card.dataset.instructional === id) || null;
+  selected = cards.find(card => card.dataset.instructional === id || (card.dataset.aliases || '').split(' ').includes(id)) || null;
   cards.forEach(card => {
     card.setAttribute('aria-pressed', String(card === selected));
     card.parentElement.classList.toggle('selected', card === selected);

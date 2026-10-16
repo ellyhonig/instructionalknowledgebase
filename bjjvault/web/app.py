@@ -72,7 +72,7 @@ def retry(job_id: int):
 def search(q: str, limit: int = 10, instructional_id: str | None = None):
     video_ids = None
     if instructional_id is not None:
-        selected = next((i for i in library.instructionals() if i["id"] == instructional_id), None)
+        selected = next((i for i in library.instructionals() if instructional_id in i["aliases"]), None)
         if selected is None:
             raise HTTPException(404, "Instructional not found. Refresh the library and select again.")
         video_ids = selected["video_ids"]

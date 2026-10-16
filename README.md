@@ -27,7 +27,12 @@ Logs are in `data/logs/`.
 
 The home page shows saved thumbnail covers. Select a cover to highlight it and reveal the question
 box directly underneath it. Questions are restricted to that instructional, including all indexed
-parts of the same Bilibili upload. The selected title appears above the question box and is
+parts of the same Bilibili upload. Separate uploads also group automatically when their instructor
+and series name match after removing part/volume/disc labels or a trailing part number (for example,
+**Body Lock System 1: Grips** and **Body Lock System 3: Top Half Guard** become **Body Lock System**).
+Capitalization, punctuation, and `&` versus `and` are normalized; different instructors stay separate.
+Only indexed parts are searched, and future indexed parts join their matching series automatically.
+The selected title appears above the question box and is
 remembered in that browser. Choose **Search all** to search
 the whole library. Only successfully indexed parts appear in the library; check **Processing** for
 pending or failed parts. Search returns matching notes and timestamped video passages.
