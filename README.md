@@ -25,6 +25,16 @@ keeps running after the shell closes; it does not automatically launch after a W
 Run `.\Stop-Vault.ps1` to stop it. Starting again resumes cached stages and partial downloads.
 Logs are in `data/logs/`.
 
+The home page shows saved thumbnail covers. Select a cover to highlight it and restrict questions
+to that instructional, including all indexed parts of the same Bilibili upload. The selected title
+appears above the question box and is remembered in that browser. Choose **Search all** to search
+the whole library. Only successfully indexed parts appear in the library; check **Processing** for
+pending or failed parts. Search returns matching notes and timestamped video passages.
+
+Covers are extracted locally from downloaded videos into `data/thumbnails/`, and new ingestions
+save them automatically. To backfill an existing library, run
+`.\.venv\Scripts\python.exe -X utf8 -m bjjvault.thumbnails`.
+
 ## ChatGPT authentication, without API keys
 
 `codex login status` must report **Logged in using ChatGPT**. If needed, run `codex login`

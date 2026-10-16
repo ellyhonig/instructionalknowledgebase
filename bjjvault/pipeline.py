@@ -5,7 +5,7 @@ import threading
 import time
 import traceback
 
-from . import config, db, download, index, notes, organize, transcribe
+from . import config, db, download, index, notes, organize, thumbnails, transcribe
 
 STAGES = ["queued", "downloading", "transcribing", "organizing", "writing notes", "indexing", "done"]
 
@@ -36,6 +36,7 @@ def process(video_url: str, playlist: str | None = None, on_status=lambda status
     on_status("downloading")
     meta = download.download(video_url, playlist, progress=lambda d: on_status("downloading", d))
     vid = meta["id"]
+    thumbnails.ensure(vid, meta.get("duration") or 0)
     on_status("transcribing", meta["title"])
     tr = transcribe.transcribe(vid, download.video_path(vid))
     if redo_notes:

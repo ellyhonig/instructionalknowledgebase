@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from .. import clips, config, db, download, index, organize, pipeline
+from .. import clips, config, db, download, index, library, organize, pipeline
 from ..util import fmt_ts, source_url
 from .playback import router as playback_router
 
@@ -17,6 +17,7 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.filters["ts"] = fmt_ts
 app.mount("/media", StaticFiles(directory=config.VIDEOS), name="media")
 app.mount("/clips", StaticFiles(directory=config.CLIPS), name="clips")
+app.mount("/thumbnails", StaticFiles(directory=config.THUMBNAILS), name="thumbnails")
 (config.VAULT / "Assets").mkdir(parents=True, exist_ok=True)
 app.mount("/assets", StaticFiles(directory=config.VAULT / "Assets"), name="assets")
 
@@ -38,10 +39,7 @@ class ClipReq(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    con = db.connect()
-    videos = [dict(r) for r in con.execute("SELECT * FROM videos ORDER BY rowid DESC")]
-    con.close()
-    return templates.TemplateResponse(request, "index.html", {"videos": videos})
+    return templates.TemplateResponse(request, "index.html", {"instructionals": library.instructionals()})
 
 
 @app.post("/api/jobs")
@@ -71,8 +69,14 @@ def retry(job_id: int):
 
 
 @app.get("/api/search")
-def search(q: str, limit: int = 10):
-    return index.search(q, limit=limit)
+def search(q: str, limit: int = 10, instructional_id: str | None = None):
+    video_ids = None
+    if instructional_id is not None:
+        selected = next((i for i in library.instructionals() if i["id"] == instructional_id), None)
+        if selected is None:
+            raise HTTPException(404, "Instructional not found. Refresh the library and select again.")
+        video_ids = selected["video_ids"]
+    return index.search(q, limit=max(1, min(limit, 50)), video_ids=video_ids)
 
 
 @app.post("/api/clip")

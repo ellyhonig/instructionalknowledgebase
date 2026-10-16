@@ -25,6 +25,7 @@ META = DATA / "meta"
 TRANSCRIPTS = DATA / "transcripts"
 ORGANIZED = DATA / "organized"
 CLIPS = DATA / "clips"
+THUMBNAILS = DATA / "thumbnails"
 DB_PATH = DATA / "vault.db"
 
 HOST = os.environ.get("BJJVAULT_HOST", "127.0.0.1")
@@ -62,7 +63,7 @@ MAX_HEIGHT = int(os.environ.get("BJJVAULT_MAX_HEIGHT", "1080"))
 
 
 def ensure_dirs() -> None:
-    for d in (VIDEOS, META, TRANSCRIPTS, ORGANIZED, CLIPS, VAULT, CACHE, TMP):
+    for d in (VIDEOS, META, TRANSCRIPTS, ORGANIZED, CLIPS, THUMBNAILS, VAULT, CACHE, TMP):
         d.mkdir(parents=True, exist_ok=True)
 
 

@@ -48,7 +48,7 @@ class MobileTests(unittest.TestCase):
                 config.playback_base_url()
 
     def test_gateway_requires_authentication_for_library_and_controls(self):
-        for path in ('/media/demo.mp4','/watch/demo','/assets/test.jpg','/docs','/openapi.json'):
+        for path in ('/media/demo.mp4','/watch/demo','/assets/test.jpg','/thumbnails/demo.jpg','/docs','/openapi.json'):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path,follow_redirects=False).status_code,303)
         self.assertEqual(self.client.get('/api/search').status_code,401)

@@ -98,13 +98,19 @@ def _fts_query(q: str) -> str:
     return " OR ".join(f'"{w}"' for w in words if len(w) > 2 and w not in STOPWORDS)
 
 
-def search(query: str, limit: int = 8, kind: str | None = None, video_id: str | None = None) -> list[dict]:
+def search(query: str, limit: int = 8, kind: str | None = None, video_id: str | None = None,
+           video_ids: list[str] | None = None) -> list[dict]:
+    if video_ids is not None and not video_ids:
+        return []
     con = db.connect()
     where, args = [], []
     if kind:
         where.append("c.kind=?"); args.append(kind)
     if video_id:
         where.append("c.video_id=?"); args.append(video_id)
+    if video_ids is not None:
+        where.append("c.video_id IN (" + ",".join("?" for _ in video_ids) + ")")
+        args.extend(video_ids)
     clause = ("WHERE " + " AND ".join(where)) if where else ""
     rows = con.execute(
         f"SELECT c.*, v.title AS video_title, v.instructor, v.url FROM chunks c "
@@ -123,7 +129,9 @@ def search(query: str, limit: int = 8, kind: str | None = None, video_id: str | 
     kw_rank = {}
     if fq := _fts_query(query):
         hits = con.execute(
-            "SELECT rowid FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY bm25(chunks_fts) LIMIT 100", (fq,)
+            "SELECT chunks_fts.rowid FROM chunks_fts JOIN chunks c ON c.id=chunks_fts.rowid "
+            "WHERE chunks_fts MATCH ? " + ("AND " + " AND ".join(where) if where else "") +
+            " ORDER BY bm25(chunks_fts) LIMIT 100", [fq, *args]
         ).fetchall()
         kw_rank = {h[0]: rank for rank, h in enumerate(r for r in hits if r[0] in by_id)}
     con.close()
