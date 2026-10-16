@@ -100,6 +100,7 @@ dependencies = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pydantic" },
+    { name = "requests" },
     { name = "uvicorn" },
     { name = "yt-dlp" },
 ]
@@ -114,6 +115,7 @@ requires-dist = [
     { name = "mlx-whisper", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = ">=0.4.2" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pydantic", specifier = ">=2.8" },
+    { name = "requests", specifier = ">=2.32" },
     { name = "uvicorn", specifier = ">=0.30" },
     { name = "yt-dlp", specifier = ">=2025.1.1" },
 ]

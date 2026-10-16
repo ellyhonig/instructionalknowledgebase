@@ -2,6 +2,7 @@
 
 import json
 import time
+import subprocess
 from urllib.parse import urlsplit
 from pathlib import Path
 from typing import Callable
@@ -15,6 +16,17 @@ from .util import safe_id
 
 class BiliBiliIE(_BiliBiliIE):
     """Use the public playback endpoint when WBI succeeds but returns no streams."""
+
+    def extract_formats(self, play_info):
+        formats = super().extract_formats(play_info)
+        dash = (play_info or {}).get('dash') or {}
+        mirrors = {}
+        for item in [*(dash.get('video') or []), *(dash.get('audio') or [])]:
+            base = item.get('baseUrl') or item.get('base_url')
+            mirrors[base] = item.get('backupUrl') or item.get('backup_url') or []
+        for fmt in formats:
+            fmt['_backup_urls'] = mirrors.get(fmt['url'], [])
+        return formats
 
     def _download_playinfo(self, bvid, cid, headers=None, query=None, fatal=True):
         info = super()._download_playinfo(bvid, cid, headers=headers, query=query, fatal=fatal)
@@ -81,16 +93,43 @@ def video_id_for(info: dict) -> str:
     return safe_id(f"{info.get('extractor_key', 'vid')}-{info['id']}").lower()
 
 
+def _download_bilibili(info: dict, vid: str, out: Path, progress=None) -> bool:
+    formats = info.get('requested_formats') or [info]
+    if not formats or any(not f.get('url', '').startswith('https://') or f.get('fragments') for f in formats):
+        return False
+    from .ranged_download import fetch
+    directory = config.DATA / 'downloads' / vid
+    inputs = []
+    for fmt in formats:
+        format_id = safe_id(str(fmt.get('format_id', 'media')))
+        ext = fmt.get('ext') or 'mp4'
+        destination = directory / f'{format_id}.{ext}'
+        seed = config.VIDEOS / f'{vid}.f{format_id}.{ext}.part'
+        headers = {**info.get('http_headers', {}), **fmt.get('http_headers', {}), 'User-Agent':'Mozilla/5.0'}
+        fetch([fmt['url'], *fmt.get('_backup_urls', [])], destination,
+              directory / f'{format_id}-ranges', headers, progress=progress, seed=seed)
+        inputs += ['-i', str(destination)]
+    temporary = directory / 'merged.mp4'
+    subprocess.run(['ffmpeg', '-nostdin', '-loglevel', 'error', '-y', *inputs,
+                    '-c', 'copy', '-movflags', '+faststart', str(temporary)], check=True)
+    temporary.replace(out)
+    return True
+
+
 def download(url: str, playlist: str | None = None, progress: Callable[[str], None] | None = None) -> dict:
     """Download one video to data/videos/<id>.mp4 and write data/meta/<id>.json. Returns the meta dict."""
     config.ensure_dirs()
-    with _ydl(_base_opts()) as ydl:
+    h = config.MAX_HEIGHT
+    selector = f"bv*[height<={h}][vcodec^=avc1]+ba[ext=m4a]/bv*[height<={h}]+ba/b[height<={h}]/b"
+    with _ydl({**_base_opts(), 'format': selector}) as ydl:
         info = ydl.extract_info(url, download=False)
     vid = video_id_for(info)
     out = config.VIDEOS / f"{vid}.mp4"
 
-    if not out.exists():
-        h = config.MAX_HEIGHT
+    ranged = False
+    if not out.exists() and info.get('extractor_key') == 'BiliBili':
+        ranged = _download_bilibili(info, vid, out, progress)
+    if not out.exists() and not ranged:
         last_progress = 0.0
 
         def hook(d):
@@ -102,7 +141,7 @@ def download(url: str, playlist: str | None = None, progress: Callable[[str], No
 
         opts = {
             **_base_opts(),
-            "format": f"bv*[height<={h}][vcodec^=avc1]+ba[ext=m4a]/bv*[height<={h}]+ba/b[height<={h}]/b",
+            "format": selector,
             "merge_output_format": "mp4",
             "outtmpl": str(config.VIDEOS / f"{vid}.%(ext)s"),
             "progress_hooks": [hook],

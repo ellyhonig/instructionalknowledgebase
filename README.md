@@ -109,6 +109,11 @@ Bilibili's public playback endpoint is used when the WBI endpoint returns succes
 Mobile short-link share parameters are removed so all parts are ingested. Availability, quality,
 and login requirements still depend on Bilibili.
 
+Bilibili DASH streams download in small, verified, resumable byte ranges with four connections.
+Interrupted chunks resume from their saved bytes, alternative CDN mirrors are used when available,
+and existing partial yt-dlp downloads seed the range cache. The cache lives in `data/downloads/`.
+The final MP4 is published only after all video/audio ranges have been verified and merged.
+
 ## Validation
 
 ```powershell
