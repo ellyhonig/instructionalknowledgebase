@@ -21,7 +21,7 @@
 {% block body %}
 <div class="layout">
   <div>
-    <video id="v" controls autoplay src="/media/{{ video_id }}.mp4"></video>
+    <video id="v" controls autoplay playsinline src="/media/{{ video_id }}.mp4"></video>
     <div class="banner" id="banner"></div>
     <div class="panel" style="margin-top:16px">
       <h1 style="margin:0 0 4px;font-size:22px">{{ org.title if org else meta.title }}</h1>

@@ -174,7 +174,7 @@ document.getElementById("search").onsubmit = async e => {
       <div><strong>${esc(r.technique || r.chapter || "Transcript")}</strong>
         <span class="tag">${esc(r.kind)}</span> <span class="small muted">${esc(r.instructor)} — ${esc(r.video_title)} · ${ts(r.start)}–${ts(r.end)}</span></div>
       <p>${esc(preview.slice(0, 400))}${preview.length > 400 ? "…" : ""}</p>
-      <video controls preload="metadata" src="/media/${r.video_id}.mp4#t=${Math.floor(r.start)},${Math.ceil(r.end)}"></video>
+      <video controls playsinline preload="metadata" src="/media/${r.video_id}.mp4#t=${Math.floor(r.start)},${Math.ceil(r.end)}"></video>
       <div class="small"><a href="/watch/${r.video_id}?t=${Math.floor(r.start)}&end=${Math.ceil(r.end)}">Open in player</a>
         · <a href="#" onclick="clip(event,'${r.video_id}',${r.start},${r.end})">Temporary clip link</a></div>
     </div>`;

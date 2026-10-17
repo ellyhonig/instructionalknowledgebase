@@ -11,6 +11,7 @@ import yt_dlp
 from yt_dlp.extractor.bilibili import BiliBiliIE as _BiliBiliIE
 
 from . import config
+from .media import validate_video
 from .util import safe_id
 
 
@@ -112,6 +113,7 @@ def _download_bilibili(info: dict, vid: str, out: Path, progress=None) -> bool:
     temporary = directory / 'merged.mp4'
     subprocess.run(['ffmpeg', '-nostdin', '-loglevel', 'error', '-y', *inputs,
                     '-c', 'copy', '-movflags', '+faststart', str(temporary)], check=True)
+    validate_video(temporary, info.get('duration') or 0)
     temporary.replace(out)
     return True
 
@@ -125,6 +127,17 @@ def download(url: str, playlist: str | None = None, progress: Callable[[str], No
         info = ydl.extract_info(url, download=False)
     vid = video_id_for(info)
     out = config.VIDEOS / f"{vid}.mp4"
+
+    if out.exists():
+        try:
+            validate_video(out, info.get('duration') or 0)
+        except (ValueError, subprocess.SubprocessError):
+            # Preserve the damaged copy on X: and replace it using the current downloader.
+            damaged = config.DATA / 'damaged-media'
+            damaged.mkdir(exist_ok=True)
+            out.replace(damaged / f'{vid}.{time.time_ns()}.mp4')
+            if progress:
+                progress('Replacing a damaged cached video')
 
     ranged = False
     if not out.exists() and info.get('extractor_key') == 'BiliBili':
@@ -151,6 +164,7 @@ def download(url: str, playlist: str | None = None, progress: Callable[[str], No
             ydl.download([url])
         if not out.exists():
             raise RuntimeError(f"Download finished but {out.name} is missing")
+        validate_video(out, info.get('duration') or 0)
 
     meta = {
         "id": vid,
